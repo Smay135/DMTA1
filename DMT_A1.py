@@ -56,7 +56,7 @@ plt.show()
 '''did all participants start at different times ??'''
 
 
-'''add plots of features: i.e., filter on feature type and plot values'''
+'''add plots of features: i.e., pd filter on feature type and plot values'''
 
 
 
