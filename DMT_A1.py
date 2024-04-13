@@ -21,12 +21,7 @@ n = len(participants)
 
 # (number of) variables
 variables = df['variable'].unique()
-nr_variables = len(variables)
-
-# datapoints per participant (= unequal)
-df['id'].value_counts() # histogram ??
-
-
+nr_variables = len(variables) 
 
 
 
@@ -37,10 +32,50 @@ df['id'].value_counts() # histogram ??
 
 
 # data cleaning
-''' how to check if everyone filled out all variables at each time point'''
-df['time'].value_counts()
+# 1. take out outliers
+# 2. missing values solution: average out values -- aggregate per day 
 
-# set index as different time
+''' consider what to do with prolonged periods of missing values''' # use average/median value
+''' are time points the same for each participant''' # no -- prove this !
+
+
+
+
+
+
+# datapoints per participant (= unequal)
+participant_counts = pd.DataFrame(df['id'].value_counts())
+# plotting logging data of individual participants
+plt.figure(figsize=(10,6))
+plt.vlines(x=participant_counts.index, ymin=0, ymax=participant_counts['id'], color='blue')
+plt.title('Datapoints per Participant')
+plt.xlabel('Participant ID')
+plt.ylabel('Frequency')
+plt.grid(True)
+plt.xticks(rotation=45) # Rotate the x-axis labels to prevent overlap
+plt.tight_layout() # Adjust the padding between and around subplots
+plt.show()
+
+# frequency of time logs (shows bias)
+time_counts = pd.DataFrame(df['time'].value_counts())
+# plotting the frequency data
+plt.figure(figsize=(10,6))
+plt.vlines(x=time_counts.index, ymin=0, ymax=time_counts['time'], color='blue')
+#plt.plot(time_counts.index, time_counts['time'], marker='o') # 'o' is for circular markers on each point
+plt.title('Frequency over Time')
+plt.xlabel('Date and Time')
+plt.ylabel('Frequency')
+plt.grid(True)
+#plt.xticks(rotation=45) # Rotate the x-axis labels to prevent overlap
+plt.tight_layout() # Adjust the padding between and around subplots
+plt.show()
+# DO THE SAME THING BUT THEN WITH SPECIFIC TIMEPOINTS IN A DAY !!
+
+'''did all participants start at different times ??'''
+
+
+
+# set index as different time (this has to come after the plots bc of indexing)
 df['time'] = pd.to_datetime(df['time'])
 df.set_index('time', inplace=True)
 # df.set_index('time')
@@ -56,6 +91,18 @@ df.set_index('time', inplace=True)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+##################
 
 ### EXAMPLE CODE TIME SERIES PLOT ###
 # Example of plotting the time series data for one variable for each participant
@@ -73,5 +120,50 @@ for participant_id in df['id'].unique():
 
 
 
+##################
 
+# selecting rows by index
+df.iloc[0]
+df.iloc[[0,1]] # df.iloc[[0,1],1] for specific cell
+
+# indexing colums/series
+df[['id','time']]
+df['id']
+
+# df.loc() = location without index ~ can use names of columns
+df.loc[0,'time']
+df.loc[[0,1,2],'time'] # or df.loc[0:2,'time'] ~ slicing is inclusive of all mentioned values
+
+
+
+
+ppl = {
+       'first': ['corey','jane','john'],
+       'last': ['smith','doe','doe'],
+       'email': ['cc@gmail.com','janedoe@gmail.com','johndoe@gmail.com']
+       }
+
+for i in ppl.keys():
+    print(ppl[i][0])
+    
+pd.DataFrame(ppl)
+
+##################
+
+# Step 1: Create dummy data
+# Generate sample data
+np.random.seed(0)
+dates = pd.date_range('20230101', periods=100)
+data = pd.DataFrame({
+    'Person1': np.random.randn(100).cumsum(),
+    'Person2': np.random.randn(100).cumsum()
+}, index=dates)
+
+# Step 2: Calculate Pearson correlation
+pearson_corr = data['Person1'].corr(data['Person2'])
+print(f"Pearson correlation: {pearson_corr}")
+
+# Step 3: Calculate Spearman correlation
+spearman_corr = data['Person1'].corr(data['Person2'], method='spearman')
+print(f"Spearman correlation: {spearman_corr}")
 
