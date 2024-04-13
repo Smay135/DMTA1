@@ -24,16 +24,7 @@ variables = df['variable'].unique()
 nr_variables = len(variables) 
 
 
-
-# data cleaning
-# 1. take out outliers
-# 2. missing values solution: average out values -- aggregate per day 
-
-''' consider what to do with prolonged periods of missing values''' # use average/median value
-''' are time points the same for each participant''' # no -- prove this !
-
-
-
+# PLOTTING FEATURES 
 # datapoints per participant (= unequal)
 participant_counts = pd.DataFrame(df['id'].value_counts())
 # plotting logging data of individual participants
@@ -64,6 +55,19 @@ plt.show()
 
 '''did all participants start at different times ??'''
 
+
+'''add plots of features: i.e., filter on feature type and plot values'''
+
+
+
+
+
+# data cleaning
+# 1. take out outliers
+# 2. missing values solution: average out values -- aggregate per day 
+
+''' consider what to do with prolonged periods of missing values''' # use average/median value
+''' are time points the same for each participant''' # no -- prove this !
 
 
 # set index as different time (this has to come after the plots bc of indexing)
