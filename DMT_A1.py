@@ -25,21 +25,12 @@ nr_variables = len(variables)
 
 
 
-
-
-
-
-
-
 # data cleaning
 # 1. take out outliers
 # 2. missing values solution: average out values -- aggregate per day 
 
 ''' consider what to do with prolonged periods of missing values''' # use average/median value
 ''' are time points the same for each participant''' # no -- prove this !
-
-
-
 
 
 
