@@ -34,8 +34,8 @@ plt.title('Datapoints per Participant')
 plt.xlabel('Participant ID')
 plt.ylabel('Frequency')
 plt.grid(True)
-plt.xticks(rotation=45) # Rotate the x-axis labels to prevent overlap
-plt.tight_layout() # Adjust the padding between and around subplots
+plt.xticks(rotation=45) # rotate x-axis labels to prevent overlap
+plt.tight_layout() # adjust padding between/around subplots
 plt.show()
 
 # frequency of time logs (shows bias)
@@ -48,8 +48,8 @@ plt.title('Frequency over Time')
 plt.xlabel('Date and Time')
 plt.ylabel('Frequency')
 plt.grid(True)
-#plt.xticks(rotation=45) # Rotate the x-axis labels to prevent overlap
-plt.tight_layout() # Adjust the padding between and around subplots
+#plt.xticks(rotation=45) # rotate x-axis labels to prevent overlap
+plt.tight_layout() # adjust padding between/around subplots
 plt.show()
 # DO THE SAME THING BUT THEN WITH SPECIFIC TIMEPOINTS IN A DAY !!
 
