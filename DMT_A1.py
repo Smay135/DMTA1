@@ -23,6 +23,8 @@ n = len(participants)
 variables = df['variable'].unique()
 nr_variables = len(variables) 
 
+# time to datetime
+df['time'] = pd.to_datetime(df['time'])
 
 # PLOTTING FEATURES 
 # datapoints per participant (= unequal)
@@ -71,7 +73,6 @@ plt.show()
 
 
 # set index as different time (this has to come after the plots bc of indexing)
-df['time'] = pd.to_datetime(df['time'])
 df.set_index('time', inplace=True)
 # df.set_index('time')
 # df.loc['AS.14.01]
