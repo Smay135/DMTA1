@@ -55,13 +55,9 @@ plt.grid(True)
 plt.tight_layout() 
 plt.show()
 # DO THE SAME THING BUT THEN WITH SPECIFIC TIMEPOINTS IN A DAY !!
-# DO THE SAME THING BUT THEN WITH FREQUENCY OF ANSWERS TO SPECIFIC FEATURES !!
 '''did all participants start at different times ??'''
 
 
-
-
-'''add plots of features: i.e., pd filter on feature type and plot values'''
 
 # set index as different time (this has to come after the plots bc of indexing)
 df.set_index('time', inplace=True)
@@ -83,8 +79,10 @@ for feature in features:
     feature_library[feature] = feature_filter(feature)
 
 # access df of each feature by changing variable name
-feature_df = feature_library['mood']
-# further indexing possible for prediction etc.: feature_library['mood']['value'][3]
+feature_df = feature_library['sms']
+feature_df['value'].unique()
+# further indexing possible: feature_library['mood']['value'][3]
+
 
 # frequency of feature logs (bring to log scale ??)
 feature_counts = pd.DataFrame(df['variable'].value_counts())
@@ -100,14 +98,51 @@ plt.tight_layout()
 plt.show()
 
 
+'''fix missing values problem here first to make better plots!!'''
+# plot average feature over time 
+for feature in features:
+    feature_df = feature_library[feature]
+    average_feature = feature_df['value'].resample('D').mean() # you can resample by hour ('H'), minute ('T'), or any other frequency that suits your dataset.
+    std_feature = feature_df['value'].resample('D').std()
+    '''too many missing values in the std_feature dataframe for variables that are answered the least (e.g., weather)'''
+    
+    
+    plt.figure(figsize=(10,6))
+    plt.errorbar(average_feature.index, average_feature, yerr=std_feature, label=f'average {feature}', fmt='-o', ecolor='red', capsize=5) # with error bars
+    #average_feature.plot() # without error bars
+    plt.title(f'Average {feature} Over Time')
+    plt.xlabel('Date')
+    plt.ylabel(f'Average {feature}')
+    plt.grid(True)
+    plt.show()
+
+'''sms and call only have 1s. maybe these variables are redundant?'''
+'''appCat.travel shoots up in may bc of spring break'''
+
+
 # descriptive statistics of individual features
+feature_descriptives = {}
+
+for feature in features:
+    # calculate descriptives and store it in dictionary
+    mean_value = feature_library[feature]['value'].mean()
+    std_value = feature_library[feature]['value'].std()
+    n = len(feature_library[feature]['value'])
+    min_val = min(feature_library[feature]['value'])
+    max_val = max(feature_library[feature]['value'])
+    
+    feature_descriptives[feature] = {'Mean': mean_value, 'StDev': std_value, 'Observations': n, 'min':min_val, 'max':max_val}
+
+# convert the dictionary to a dataframe
+feature_descriptives_df = pd.DataFrame.from_dict(feature_descriptives, orient='index')
 
 
-# correlation matrix
+
+# correlation matrix (correlations between individual feature dataframes)
 
 
 
-'''show daily trends with dips in time (night & early morning)'''
+'''show daily trends with dips in time (night & early morning) --> plots for x = hours'''
 
 
 '''aggregate here and analyse again'''
@@ -125,6 +160,10 @@ plt.show()
 
 
 
+
+# filtering participants
+# i.e., filtering based on variable (mood values only & compare -- etc.)
+'https://www.youtube.com/watch?v=Lw2rlcxScZY&list=PL-osiE80TeTsWmV9i9c58mdDCSskIFdDS&index=4'
 
 
 
