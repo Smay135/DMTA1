@@ -84,7 +84,7 @@ for feature in features:
 
 # access df of each feature by changing variable name
 feature_df = feature_library['mood']
-
+# further indexing possible for prediction etc.: feature_library['mood']['value'][3]
 
 # frequency of feature logs (bring to log scale ??)
 feature_counts = pd.DataFrame(df['variable'].value_counts())
