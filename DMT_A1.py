@@ -126,10 +126,6 @@ plt.show()
 
 
 
-# filtering participants
-# i.e., filtering based on variable (mood values only & compare -- etc.)
-'https://www.youtube.com/watch?v=Lw2rlcxScZY&list=PL-osiE80TeTsWmV9i9c58mdDCSskIFdDS&index=4'
-
 
 
 
