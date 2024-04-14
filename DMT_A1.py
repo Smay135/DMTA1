@@ -19,12 +19,13 @@ df.columns
 participants = df['id'].unique()
 n = len(participants)
 
-# (number of) variables
-variables = df['variable'].unique()
-nr_variables = len(variables) 
+# (number of) features
+features = df['variable'].unique()
+nr_features = len(features) 
 
 # time to datetime
 df['time'] = pd.to_datetime(df['time'])
+
 
 # PLOTTING FEATURES 
 # datapoints per participant (= unequal)
@@ -37,29 +38,79 @@ plt.xlabel('Participant ID')
 plt.ylabel('Frequency')
 plt.grid(True)
 plt.xticks(rotation=45) # rotate x-axis labels to prevent overlap
-plt.tight_layout() # adjust padding between/around subplots
+plt.tight_layout() 
 plt.show()
 
-# frequency of time logs (shows bias)
+# frequency of time logs (shows bias) 
 time_counts = pd.DataFrame(df['time'].value_counts())
 # plotting the frequency data
 plt.figure(figsize=(10,6))
 plt.vlines(x=time_counts.index, ymin=0, ymax=time_counts['time'], color='blue')
-#plt.plot(time_counts.index, time_counts['time'], marker='o') # 'o' is for circular markers on each point
+#plt.plot(time_counts.index, time_counts['time'], marker='o')
 plt.title('Frequency over Time')
 plt.xlabel('Date and Time')
 plt.ylabel('Frequency')
 plt.grid(True)
-#plt.xticks(rotation=45) # rotate x-axis labels to prevent overlap
-plt.tight_layout() # adjust padding between/around subplots
+#plt.xticks(rotation=45) # rotate x-axis labels
+plt.tight_layout() 
 plt.show()
 # DO THE SAME THING BUT THEN WITH SPECIFIC TIMEPOINTS IN A DAY !!
-
+# DO THE SAME THING BUT THEN WITH FREQUENCY OF ANSWERS TO SPECIFIC FEATURES !!
 '''did all participants start at different times ??'''
+
+
 
 
 '''add plots of features: i.e., pd filter on feature type and plot values'''
 
+# set index as different time (this has to come after the plots bc of indexing)
+df.set_index('time', inplace=True)
+# df.set_index('time')
+# df.loc['AS.14.01]
+# df.set_index('time').sort_index(inplace=True)
+
+
+### filtering data ###
+feature_library = {}
+
+# filter function
+def feature_filter(feature):
+    feature_df = df.loc[df['variable']==feature]
+    return feature_df
+
+# storing dfs for all features in library
+for feature in features:
+    feature_library[feature] = feature_filter(feature)
+
+# access df of each feature by changing variable name
+feature_df = feature_library['mood']
+
+
+# frequency of feature logs (bring to log scale ??)
+feature_counts = pd.DataFrame(df['variable'].value_counts())
+# plotting logging data of individual features
+plt.figure(figsize=(10,6))
+plt.vlines(x=feature_counts.index, ymin=0, ymax=feature_counts['variable'], color='blue')
+plt.title('Datapoints per Feature')
+plt.xlabel('Feature')
+plt.ylabel('Frequency')
+plt.grid(True)
+plt.xticks(rotation=45) # rotate x-axis labels to prevent overlap
+plt.tight_layout() 
+plt.show()
+
+
+# descriptive statistics of individual features
+
+
+# correlation matrix
+
+
+
+'''show daily trends with dips in time (night & early morning)'''
+
+
+'''aggregate here and analyse again'''
 
 
 
@@ -72,11 +123,7 @@ plt.show()
 ''' are time points the same for each participant''' # no -- prove this !
 
 
-# set index as different time (this has to come after the plots bc of indexing)
-df.set_index('time', inplace=True)
-# df.set_index('time')
-# df.loc['AS.14.01]
-# df.set_index('time').sort_index(inplace=True)
+
 
 
 # filtering participants
@@ -162,4 +209,3 @@ print(f"Pearson correlation: {pearson_corr}")
 # Step 3: Calculate Spearman correlation
 spearman_corr = data['Person1'].corr(data['Person2'], method='spearman')
 print(f"Spearman correlation: {spearman_corr}")
-
