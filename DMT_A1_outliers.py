@@ -104,24 +104,28 @@ for feature in features:
 variables = df['variable'].unique()
 print(variables)
 
-mood_df = feature_library['mood']
-print(f"og mood df={mood_df}:")
-arous_df = feature_library['circumplex.arousal']
-valen_df = feature_library['circumplex.valence']
-activity_df = feature_library['activity']
-screen_df = feature_library['screen']
-builtin_df = feature_library['appCat.builtin']
-comm_df = feature_library['appCat.communication']
-ent_df = feature_library['appCat.entertainment']
-finance_df = feature_library['appCat.finance']
-game_df = feature_library['appCat.game']
-office_df = feature_library['appCat.office']
-other_df = feature_library['appCat.other']
-social_df = feature_library['appCat.social']
-travel_df = feature_library['appCat.social']
-unk_df = feature_library['appCat.unknown']
-util_df = feature_library['appCat.utilities']
-weather_df =feature_library['appCat.weather']
+var_df_lib = {}
+for var in variables:
+    var_df_lib[var] = feature_library[var]
+
+print(f"*****DICTIONARY *****{var_df_lib}")
+# mood_df = feature_library['mood']
+# arous_df = feature_library['circumplex.arousal']
+# valen_df = feature_library['circumplex.valence']
+# activity_df = feature_library['activity']
+# screen_df = feature_library['screen']
+# builtin_df = feature_library['appCat.builtin']
+# comm_df = feature_library['appCat.communication']
+# ent_df = feature_library['appCat.entertainment']
+# finance_df = feature_library['appCat.finance']
+# game_df = feature_library['appCat.game']
+# office_df = feature_library['appCat.office']
+# other_df = feature_library['appCat.other']
+# social_df = feature_library['appCat.social']
+# travel_df = feature_library['appCat.social']
+# unk_df = feature_library['appCat.unknown']
+# util_df = feature_library['appCat.utilities']
+# weather_df =feature_library['appCat.weather']
 
 feature_df = feature_library['mood']
 #print(feature_df)
@@ -144,8 +148,7 @@ feature_counts = pd.DataFrame(df['variable'].value_counts())
 # feature_counts.boxplot()
 # plt.show()
 
-#used boxplot to find outliers
-#anything over 40000
+
 #sns.boxplot(feature_counts).set_title('variables')
 #plt.show()
 
@@ -168,26 +171,9 @@ feature_counts = pd.DataFrame(df['variable'].value_counts())
 
 # data cleaning
 # 1. take out outliers
-def removal_box_plot(d_f, column):
-    sns.boxplot(data = d_f, x='id', y= 'value')
-    #sns.boxplot(data=titanic, x="class", y="age", hue="alive")
-    plt.title(f'Original Box Plot of {column}')
-    #plt.show()
-
-    # removed_outliers = d_f[d_f[column] <= threshold]
-    #
-    # sns.boxplot(removed_outliers[column])
-    # plt.title(f'Box Plot without Outliers of {column}')
-    # plt.show()
-    # return removed_outliers
-
-
-# threshold_value =
-
-no_outliers = removal_box_plot(feature_df, 'values')
-
 
 def mood_out(var_df, ppl):
+    filtered_rows_list = []  # List to collect filtered DataFrames for each 'id'
     for p in ppl:
         # Filter var_df to get rows where 'id' matches the current 'p'
         filtered_rows = var_df[var_df['id'] == p].copy()  # Make a copy of the filtered DataFrame
@@ -197,7 +183,10 @@ def mood_out(var_df, ppl):
         filtered_rows.loc[filtered_rows['value'] < lower, 'value'] = 1
         filtered_rows.loc[filtered_rows['value'] > upper, 'value'] = 10
 
-    return filtered_rows
+        filtered_rows_list.append(filtered_rows)
+    result_df = pd.concat(filtered_rows_list, ignore_index=True)
+
+    return result_df
 
 
 def out_pp(var_df, ppl):
@@ -235,92 +224,57 @@ def percent_left(old, new):
     percent = percent*100
     return percent
 
-olf_df_mood = mood_out(mood_df, participants)
-print(f"out_mood{olf_df_mood}")
-olf_df_arous = out_pp(arous_df, participants)
-olf_df_val = out_pp(valen_df, participants)
-olf_df_act = out_pp(activity_df, participants)
-olf_df_scr = out_pp(screen_df, participants)
-olf_df_bi = out_pp(builtin_df, participants)
-olf_df_comm = out_pp(comm_df, participants)
-olf_df_ent = out_pp(ent_df, participants)
-olf_df_fin = out_pp(finance_df, participants)
-olf_df_game = out_pp(game_df, participants)
-olf_df_off = out_pp(office_df, participants)
-olf_df_oth = out_pp(other_df, participants)
-olf_df_soc = out_pp(social_df, participants)
-olf_df_trav = out_pp(travel_df, participants)
-olf_df_unk = out_pp(unk_df, participants)
-olf_df_util = out_pp(util_df, participants)
-olf_df_weath = out_pp(weather_df, participants)
-print(olf_df_weath)
+# Dictionary to hold the output DataFrames
+olf_dataframes = {}
 
-sns.boxplot(data = olf_df_mood, x='id', y= 'value')
+# Loop through each DataFrame and apply out_pp function
+for df_name, df in var_df_lib.items():
+    olf_dataframes[df_name] = out_pp(df, participants)
+
+olf_df_mood = mood_out(var_df_lib['mood'], participants)
+olf_dataframes = {'mood_df': olf_df_mood, **olf_dataframes}
+print(olf_dataframes)
+
+#sns.boxplot(data = olf_df_mood, x='id', y= 'value')
 #plt.show()
 # 2. missing values solution: average out values -- aggregate per day
 
 
 
-#trying to average per person but only seems to be getting the last person
+#averages out per person per day period (before noon (am), after noon (pm))
 def avg_time(var_df, ppl):
-    result_list = []  # List to collect daily averages for each participant
+    result_list = {}  # List to collect daily averages for each participant
 
     for p in ppl:
         # Filter var_df to get rows where 'id' matches the current 'p'
         filtered_rows = var_df[var_df['id'] == p].copy()
-
+        #print(f"result_list: {result_list}")
         # Convert 'time' column to datetime
         filtered_rows['time'] = pd.to_datetime(filtered_rows['time'])
 
         # Extract day, hour, and time of day
         filtered_rows['day'] = filtered_rows['time'].dt.date
         filtered_rows['hour'] = filtered_rows['time'].dt.hour
-        filtered_rows['time_of_day'] = filtered_rows['hour'].apply(lambda x: 'morning' if x < 12 else 'evening')
+        filtered_rows['time_of_day'] = filtered_rows['hour'].apply(lambda x: 'am' if x < 12 else 'pm')
 
-        # Calculate daily averages for morning and evening
         daily_averages = filtered_rows.groupby(['id', 'day', 'time_of_day'])['value'].mean().unstack()
-
+        print(daily_averages)
         # Append daily averages to result_list
-        result_list.append(daily_averages)
-
-    # Concatenate all daily averages into a single DataFrame
-    final_result = pd.concat(result_list) #.reset_index()  # Reset index to turn multi-index into columns
-
-    return final_result
+        result_list[p] = daily_averages
+        #result_list.append(daily_averages)
 
 
-#Averages per day/part of day
-def average_by_time(data):
-    # Convert datetime string column to pandas datetime
-    data['time'] = pd.to_datetime(data['time'])
+    return result_list
 
-    # Extract day (date part), hour (hour part), and time of day (morning or evening)
-    data['day'] = data['time'].dt.date
-    data['hour'] = data['time'].dt.hour
-    data['time_of_day'] = data['hour'].apply(lambda x: 'morning' if x < 12 else 'evening')
+olf_time_dataframes = {}
 
-    # Calculate daily averages for morning and evening
-    daily_averages = data.groupby(['day', 'time_of_day'])['value'].mean().unstack()
+# Loop through each DataFrame and apply out_pp function
+for df_name, df in olf_dataframes.items():
+    olf_time_dataframes[df_name] = avg_time(df, participants)
 
-    return daily_averages
+print(olf_time_dataframes)
 
-time_mood = avg_time(olf_df_mood, participants)
-print(time_mood)
-id_to_print = 'AS14.01'
-time_mood_filtered = time_mood[time_mood['id'] == id_to_print]
-print(time_mood_filtered)
-#result_dict = {}
-# for p in participants:
-#     # Filter data for the current participant (p)
-#     participant_data = olf_df_mood[olf_df_mood['id'] == p].copy()
-#
-#     # Calculate time-based averages for the current participant
-#     time_mood = average_by_time(participant_data)
-#
-#     # Append the result to the dictionary with participant ID (p) as the key
-#     result_dict[p] = time_mood
-# print(resu)
-#print(f"{time_mood}")
+
 
 ''' consider what to do with prolonged periods of missing values''' # use average/median value
 ''' are time points the same for each participant''' # no -- prove this !
