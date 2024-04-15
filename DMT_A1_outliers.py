@@ -54,9 +54,10 @@ participant_counts = pd.DataFrame(pc)
 # plt.show()
 sns.boxplot(participant_counts).set_title('participants')
 #plt.show()
-
+original_df = df.copy()
 # frequency of time logs (shows bias) 
 time_counts = pd.DataFrame(df['time'].value_counts())
+
 #print(time_counts)
 #plotting the frequency data
 plt.figure(figsize=(10,6))
@@ -69,7 +70,7 @@ plt.grid(True)
 #plt.xticks(rotation=45) # rotate x-axis labels
 plt.tight_layout()
 #plt.show()
-
+df = original_df
 # DO THE SAME THING BUT THEN WITH SPECIFIC TIMEPOINTS IN A DAY !!
 # DO THE SAME THING BUT THEN WITH FREQUENCY OF ANSWERS TO SPECIFIC FEATURES !!
 '''did all participants start at different times ??'''
@@ -80,7 +81,7 @@ plt.tight_layout()
 '''add plots of features: i.e., pd filter on feature type and plot values'''
 
 # set index as different time (this has to come after the plots bc of indexing)
-df.set_index('time', inplace=True)
+#df.set_index('time', inplace=True)
 # df.set_index('time')
 # df.loc['AS.14.01]
 # df.set_index('time').sort_index(inplace=True)
@@ -171,7 +172,7 @@ def removal_box_plot(d_f, column):
     sns.boxplot(data = d_f, x='id', y= 'value')
     #sns.boxplot(data=titanic, x="class", y="age", hue="alive")
     plt.title(f'Original Box Plot of {column}')
-    plt.show()
+    #plt.show()
 
     # removed_outliers = d_f[d_f[column] <= threshold]
     #
@@ -225,7 +226,7 @@ def out_pp(var_df, ppl):
 
     # Print remaining percentage of rows in the original DataFrame
     print("Percentage of rows remaining:")
-    print(percent_left(var_df, result_df))  # Assuming percent_left function is defined elsewhere
+    print(percent_left(var_df, result_df))
 
     return result_df
 
@@ -255,8 +256,40 @@ olf_df_weath = out_pp(weather_df, participants)
 print(olf_df_weath)
 
 sns.boxplot(data = olf_df_mood, x='id', y= 'value')
-plt.show()
-# 2. missing values solution: average out values -- aggregate per day 
+#plt.show()
+# 2. missing values solution: average out values -- aggregate per day
+
+
+
+#trying to average per person but only seems to be getting the last person
+def avg_time(var_df, ppl):
+    result_list = []  # List to collect daily averages for each participant
+
+    for p in ppl:
+        # Filter var_df to get rows where 'id' matches the current 'p'
+        filtered_rows = var_df[var_df['id'] == p].copy()
+
+        # Convert 'time' column to datetime
+        filtered_rows['time'] = pd.to_datetime(filtered_rows['time'])
+
+        # Extract day, hour, and time of day
+        filtered_rows['day'] = filtered_rows['time'].dt.date
+        filtered_rows['hour'] = filtered_rows['time'].dt.hour
+        filtered_rows['time_of_day'] = filtered_rows['hour'].apply(lambda x: 'morning' if x < 12 else 'evening')
+
+        # Calculate daily averages for morning and evening
+        daily_averages = filtered_rows.groupby(['id', 'day', 'time_of_day'])['value'].mean().unstack()
+
+        # Append daily averages to result_list
+        result_list.append(daily_averages)
+
+    # Concatenate all daily averages into a single DataFrame
+    final_result = pd.concat(result_list) #.reset_index()  # Reset index to turn multi-index into columns
+
+    return final_result
+
+
+#Averages per day/part of day
 def average_by_time(data):
     # Convert datetime string column to pandas datetime
     data['time'] = pd.to_datetime(data['time'])
@@ -271,9 +304,23 @@ def average_by_time(data):
 
     return daily_averages
 
-time_mood = average_by_time(olf_df_mood)
-print(olf_df_mood)
-print(f"time mood: {time_mood}")
+time_mood = avg_time(olf_df_mood, participants)
+print(time_mood)
+id_to_print = 'AS14.01'
+time_mood_filtered = time_mood[time_mood['id'] == id_to_print]
+print(time_mood_filtered)
+#result_dict = {}
+# for p in participants:
+#     # Filter data for the current participant (p)
+#     participant_data = olf_df_mood[olf_df_mood['id'] == p].copy()
+#
+#     # Calculate time-based averages for the current participant
+#     time_mood = average_by_time(participant_data)
+#
+#     # Append the result to the dictionary with participant ID (p) as the key
+#     result_dict[p] = time_mood
+# print(resu)
+#print(f"{time_mood}")
 
 ''' consider what to do with prolonged periods of missing values''' # use average/median value
 ''' are time points the same for each participant''' # no -- prove this !
