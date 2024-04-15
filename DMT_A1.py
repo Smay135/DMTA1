@@ -79,7 +79,7 @@ for feature in features:
     feature_library[feature] = feature_filter(feature)
 
 # access df of each feature by changing variable name
-feature_df = feature_library['sms']
+feature_df = feature_library['mood']
 feature_df['value'].unique()
 # further indexing possible: feature_library['mood']['value'][3]
 
@@ -140,6 +140,17 @@ feature_descriptives_df = pd.DataFrame.from_dict(feature_descriptives, orient='i
 
 # correlation matrix (correlations between individual feature dataframes)
 
+value_library = {}
+
+
+for feature in features:
+    daily_averages = feature_library[feature].groupby([pd.Grouper(freq='D')])['value'].mean()
+
+    value_library[feature] = daily_averages
+    
+value_df = pd.DataFrame.from_dict(value_library)
+
+correlation_matrix = value_df.corr()
 
 
 '''show daily trends with dips in time (night & early morning) --> plots for x = hours'''
