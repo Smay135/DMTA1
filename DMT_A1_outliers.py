@@ -11,6 +11,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 
@@ -21,6 +23,7 @@ df.columns
 
 # (number of) participants
 participants = df['id'].unique()
+#print(participants)
 n = len(participants)
 
 # (number of) features
@@ -89,6 +92,7 @@ feature_library = {}
 # filter function
 def feature_filter(feature):
     feature_df = df.loc[df['variable']==feature]
+    #print(f"features={feature_df}")
     return feature_df
 
 # storing dfs for all features in library
@@ -100,6 +104,7 @@ variables = df['variable'].unique()
 print(variables)
 
 mood_df = feature_library['mood']
+print(f"og mood df={mood_df}:")
 arous_df = feature_library['circumplex.arousal']
 valen_df = feature_library['circumplex.valence']
 activity_df = feature_library['activity']
@@ -180,11 +185,23 @@ def removal_box_plot(d_f, column):
 
 no_outliers = removal_box_plot(feature_df, 'values')
 
-def outliers_pp(var_df, ppl):
-    # Create an empty DataFrame to store appended rows
-    olf_df = pd.DataFrame(columns=var_df.columns)  # Assuming var_df has columns you want to preserve
 
-    # Iterate over each 'id' in ppl
+def mood_out(var_df, ppl):
+    for p in ppl:
+        # Filter var_df to get rows where 'id' matches the current 'p'
+        filtered_rows = var_df[var_df['id'] == p].copy()  # Make a copy of the filtered DataFrame
+
+        lower = 1
+        upper = 10
+        filtered_rows.loc[filtered_rows['value'] < lower, 'value'] = 1
+        filtered_rows.loc[filtered_rows['value'] > upper, 'value'] = 10
+
+    return filtered_rows
+
+
+def out_pp(var_df, ppl):
+    filtered_rows_list = []  # List to collect filtered DataFrames for each 'id'
+
     for p in ppl:
         # Filter var_df to get rows where 'id' matches the current 'p'
         filtered_rows = var_df[var_df['id'] == p].copy()  # Make a copy of the filtered DataFrame
@@ -196,40 +213,67 @@ def outliers_pp(var_df, ppl):
         lower = Q1 - 1.5 * IQR
         upper = Q3 + 1.5 * IQR
 
-        # Identify outlier rows based on value column
-        outliers_mask = (filtered_rows['value'] < lower) | (filtered_rows['value'] > upper)
+        # Cap outliers to lower and upper bounds
+        filtered_rows.loc[filtered_rows['value'] < lower, 'value'] = lower
+        filtered_rows.loc[filtered_rows['value'] > upper, 'value'] = upper
 
-        # Remove outliers
-        filtered_rows = filtered_rows[~outliers_mask]
+        # Append filtered_rows to the list
+        filtered_rows_list.append(filtered_rows)
 
-        # Append filtered rows to olf_df
-        olf_df = pd.concat([olf_df, filtered_rows], ignore_index=True)
+    # Concatenate all filtered DataFrames in the list
+    result_df = pd.concat(filtered_rows_list, ignore_index=True)
 
-    return olf_df
+    # Print remaining percentage of rows in the original DataFrame
+    print("Percentage of rows remaining:")
+    print(percent_left(var_df, result_df))  # Assuming percent_left function is defined elsewhere
 
+    return result_df
 
+def percent_left(old, new):
+    percent = len(new)/len(old)
+    percent = percent*100
+    return percent
 
-olf_df_mood = outliers_pp(mood_df, participants)
-olf_df_arous = outliers_pp(arous_df, participants)
-olf_df_val = outliers_pp(valen_df, participants)
-olf_df_act = outliers_pp(activity_df, participants)
-olf_df_scr = outliers_pp(screen_df, participants)
-olf_df_bi = outliers_pp(builtin_df, participants)
-olf_df_comm = outliers_pp(comm_df, participants)
-olf_df_ent = outliers_pp(ent_df, participants)
-olf_df_fin = outliers_pp(finance_df, participants)
-olf_df_game = outliers_pp(game_df, participants)
-olf_df_off = outliers_pp(office_df, participants)
-olf_df_oth = outliers_pp(other_df, participants)
-olf_df_soc = outliers_pp(social_df, participants)
-olf_df_trav = outliers_pp(travel_df, participants)
-olf_df_unk = outliers_pp(unk_df, participants)
-olf_df_util = outliers_pp(util_df, participants)
-olf_df_weath = outliers_pp(weather_df, participants)
+olf_df_mood = mood_out(mood_df, participants)
+print(f"out_mood{olf_df_mood}")
+olf_df_arous = out_pp(arous_df, participants)
+olf_df_val = out_pp(valen_df, participants)
+olf_df_act = out_pp(activity_df, participants)
+olf_df_scr = out_pp(screen_df, participants)
+olf_df_bi = out_pp(builtin_df, participants)
+olf_df_comm = out_pp(comm_df, participants)
+olf_df_ent = out_pp(ent_df, participants)
+olf_df_fin = out_pp(finance_df, participants)
+olf_df_game = out_pp(game_df, participants)
+olf_df_off = out_pp(office_df, participants)
+olf_df_oth = out_pp(other_df, participants)
+olf_df_soc = out_pp(social_df, participants)
+olf_df_trav = out_pp(travel_df, participants)
+olf_df_unk = out_pp(unk_df, participants)
+olf_df_util = out_pp(util_df, participants)
+olf_df_weath = out_pp(weather_df, participants)
+print(olf_df_weath)
 
 sns.boxplot(data = olf_df_mood, x='id', y= 'value')
 plt.show()
 # 2. missing values solution: average out values -- aggregate per day 
+def average_by_time(data):
+    # Convert datetime string column to pandas datetime
+    data['time'] = pd.to_datetime(data['time'])
+
+    # Extract day (date part), hour (hour part), and time of day (morning or evening)
+    data['day'] = data['time'].dt.date
+    data['hour'] = data['time'].dt.hour
+    data['time_of_day'] = data['hour'].apply(lambda x: 'morning' if x < 12 else 'evening')
+
+    # Calculate daily averages for morning and evening
+    daily_averages = data.groupby(['day', 'time_of_day'])['value'].mean().unstack()
+
+    return daily_averages
+
+time_mood = average_by_time(olf_df_mood)
+print(olf_df_mood)
+print(f"time mood: {time_mood}")
 
 ''' consider what to do with prolonged periods of missing values''' # use average/median value
 ''' are time points the same for each participant''' # no -- prove this !
