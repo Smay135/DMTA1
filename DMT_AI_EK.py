@@ -21,6 +21,7 @@ df = pd.read_csv('/Users/esmeekool/Desktop/dataset_mood_smartphone.csv', delimit
 df.info()
 df.head()
 df.columns
+np.unique(df[df['variable']=='mood']['value'])
 
 # (number of) participants
 participants = df['id'].unique()
@@ -285,89 +286,26 @@ print(f"time mood: {time_mood}")
 
 
 #PCA analsyis
-'''
-dfs_to_standardize= [olf_df_mood, olf_df_arous, olf_df_val, olf_df_act, olf_df_scr, olf_df_bi, olf_df_comm,
-                      olf_df_ent, olf_df_fin, olf_df_game, olf_df_off, olf_df_oth, olf_df_soc,
-                      olf_df_trav, olf_df_unk, olf_df_util, olf_df_weath]
-
-dfs_to_standardize
-# Initialize the StandardScaler
-scaler = StandardScaler()
-
-#standardizing the values so that mean=0 and sd=1
-scaled_dfs = []
-for df in dfs_to_standardize:
-    scaled_df = df.copy() # Make a copy of the original DataFrame
-    # Replace the 'value' column with the scaled values
-    scaled_df['value'] = scaler.fit_transform(df['value'].values.reshape(-1, 1))
-    scaled_dfs.append(scaled_df)
-
-
-
-scaled_dfs[1][scaled_dfs[1]['id'] == 'AS14.01']
-
-#PCA
-pca_mood = PCA(n_components=2)
-principalComponents_mood = pca_mood.fit_transform(scaled_dfs[0]['value'])
-'''
-
-
 
 
 #attempt 2
-#Rounding time stamps to day/week 
-df_participant_1= df[df['id']=="AS14.01"]
-df_participant_1['time'].unique()
-df_participant_1['time'] = pd.to_datetime(df_participant_1['time'])
-#df_participant_1['rounded_time'] = df_participant_1['time'].dt.round('D')
-df_participant_1['rounded_time'] = df_participant_1['time'].dt.to_period('W').dt.to_timestamp()
-df_participant_1
-pivoted_df = df_participant_1.pivot_table(index='rounded_time', columns='variable', values='value', aggfunc='mean')
-pivoted_df['rounded_time'] = df_participant_1['rounded_time']
-pivoted_df
-
-
-numerical_columns = pivoted_df.columns.difference(['rounded_time'])
-
-
-#to standardize the data
-scaler = StandardScaler()
-scaled_data = scaler.fit_transform(pivoted_df[numerical_columns]) # scaling the data to have mean 0 and sd 1
-scaled_data
-
-#to account for the NaN values 
-from sklearn.impute import SimpleImputer
-imputer = SimpleImputer(strategy='mean')
-data_imputed = imputer.fit_transform(scaled_data)
-
-# PCA
-pca = PCA(n_components=2)  # number of components as needed
-principal_components = pca.fit_transform(data_imputed)
-principal_df = pd.DataFrame(data=principal_components, columns=['PC1', 'PC2']) # Create a DataFrame for the PC
-
-final_df = pd.concat([df_participant_1['rounded_time'], principal_df], axis=1) # Concatenate the PC with the rounded tim
-print(final_df)
-
-
-
-
-
-#OTHER APPROACH: Aggregating the data (summarizing it across days )
 '''
 This is simply the means for each participant over all timestamps 
 Did not yet do this with the cleaned data from Clair becuase It was easier for me to seperate by participant from the
 original df, but needs to be fixed
 
 '''
-pivot_df_mean= df.pivot_table(index='id', columns='variable', values='value', aggfunc='mean')
+df['time'] = pd.to_datetime(df['time'])
+df['rounded_time'] = df['time'].dt.to_period('D').dt.to_timestamp()
+pivot_df_mean= df.pivot_table(index='variable', columns='rounded_time', values='value', aggfunc='mean')
 pivot_df_mean.fillna(0, inplace=True)  # Fill NaN values with 0
 pivot_df_mean
 
 
 #PCA on the mean values 
-pca = PCA(n_components=4)  # number of components as needed
+pca = PCA(n_components=3)  #number of components as needed
 principal_components = pca.fit_transform(pivot_df_mean)
-principal_df = pd.DataFrame(data=principal_components, columns=['PC1', 'PC2', 'PC3', 'PC4']) # Create a DataFrame for the PC
+principal_df = pd.DataFrame(data=principal_components, columns=['PC1', 'PC2', 'PC3']) # Create a DataFrame for the PC
 
 print(principal_df)
 
@@ -375,13 +313,43 @@ print(principal_df)
 PC1_values = principal_df['PC1']
 PC2_values = principal_df['PC2']
 PC3_values = principal_df['PC3']
-PC4_values = principal_df['PC4']
 
 
-sns.pairplot(principal_df, vars=['PC1', 'PC2', 'PC3', 'PC4'])
+sns.pairplot(principal_df, vars=['PC1', 'PC2', 'PC3'])
 plt.suptitle('Principal Component Analysis', y=1.02)
 plt.show()
 
+
+
+
+#Deciding the  num of components by scree plot and cumalitive explaine varaince  (CHATGPT)
+pca = PCA()
+pca.fit(pivot_df_mean)
+
+# Scree Plot
+plt.figure(figsize=(10, 6))
+plt.plot(range(1, len(pca.explained_variance_ratio_) + 1), pca.explained_variance_ratio_, marker='o', linestyle='-')
+plt.title('Scree Plot')
+plt.xlabel('Number of Components')
+plt.ylabel('Explained Variance Ratio')
+plt.grid(True)
+plt.show()
+
+# Cumulative Explained Variance
+plt.figure(figsize=(10, 6))
+plt.plot(range(1, len(pca.explained_variance_ratio_) + 1), np.cumsum(pca.explained_variance_ratio_), marker='o', linestyle='-')
+plt.title('Cumulative Explained Variance')
+plt.xlabel('Number of Components')
+plt.ylabel('Cumulative Explained Variance Ratio')
+plt.grid(True)
+plt.show()
+
+
+
+
+
+
+                           
 
 
 ##################
