@@ -31,7 +31,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
 
-df = pd.read_csv('/Users/esmeekool/Desktop/dataset_mood_smartphone.csv', delimiter=',')
+df = pd.read_csv('/Users/esmeekool/Desktop/cleaned_dataset.csv', delimiter=',')
+#df_unclean=pd.read_csv('/Users/esmeekool/Desktop/dataset_mood_smartphone.csv', delimiter=',')
 df = df[df['variable'] != 'call']
 df = df[df['variable'] != 'sms']
 participants = df['id'].unique()
@@ -43,7 +44,7 @@ df['rounded_time'] = df['time'].dt.to_period('D').dt.to_timestamp()
 
 
 
-#Data Organizing
+#DFeature engineering
 #participants=[ 'AS14.05']
 #days_range= df['rounded_time'].unique()
 
@@ -86,7 +87,34 @@ final_df['mood']=np.round(final_df['mood'])
 
 
 
+
 # 1
+#RANDOM FOREST CLASSIFIER APROACH --> is what i did before regression??
+# 0-3: Low Mood, 4-6: Medium Mood, 7-10: High Mood
+final_df['mood_class'] = pd.cut(final_df['mood'], bins=[-np.inf, 3, 6, np.inf], labels=['Low', 'Medium', 'High'])
+variables= final_df.drop(['mood', 'mood_class'], axis = 1)
+variable_names = list(variables.columns) # variables names 
+
+train_variables_class, test_variables_class, train_mood_class, test_mood_class = train_test_split(variables, final_df['mood_class'], test_size=0.25, random_state=42)
+
+rf_class = RandomForestClassifier(n_estimators=1000, random_state=42, max_features='sqrt') # train RandomForestClassifier
+rf_class.fit(train_variables_class, train_mood_class)
+
+predictions_class = rf_class.predict(test_variables_class) # predictions
+
+# Evaluatation 
+accuracy = accuracy_score(test_mood_class, predictions_class)
+report = classification_report(test_mood_class, predictions_class)
+
+print("Accuracy:", accuracy)
+print("Classification Report:")
+print(report)
+
+
+
+
+
+# 2
 #Random tree search 
 #preparing the data (predicitona dn outcome variables seperate) 
 mood = np.array(final_df['mood'])
@@ -113,7 +141,7 @@ rf = RandomForestRegressor(n_estimators = 1000, random_state = 42) # Instantiate
 rf.fit(train_variables, train_mood); # training the model 
 
 #make predictions
-predictions = np.round(rf.predict(test_variables))
+predictions = rf.predict(test_variables)
 errors = abs(predictions - test_mood) #Calculate the absolute errors
 print('Mean Absolute Error:', round(np.mean(errors), 2), 'degrees.') #mean absolute error (mae)
 
@@ -140,28 +168,6 @@ plt.xlabel('Actual Mood')
 plt.ylabel('Predicted Mood')
 plt.title('Actual vs Predicted Mood')
 plt.show()
-
-
-
-# 2
-#RANDOM FOREST CLASSIFIER APROACH --> is what i did before regression??
-# 0-3: Low Mood, 4-6: Medium Mood, 7-10: High Mood
-final_df['mood_class'] = pd.cut(final_df['mood'], bins=[-np.inf, 3, 6, np.inf], labels=['Low', 'Medium', 'High'])
-train_variables_class, test_variables_class, train_mood_class, test_mood_class = train_test_split(variables, final_df['mood_class'], test_size=0.25, random_state=42)
-
-rf_class = RandomForestClassifier(n_estimators=1000, random_state=42, max_features='sqrt') # train RandomForestClassifier
-rf_class.fit(train_variables_class, train_mood_class)
-
-predictions_class = rf_class.predict(test_variables_class) # predictions
-
-# Evaluatation 
-accuracy = accuracy_score(test_mood_class, predictions_class)
-report = classification_report(test_mood_class, predictions_class)
-
-print("Accuracy:", accuracy)
-print("Classification Report:")
-print(report)
-
 
 
 
