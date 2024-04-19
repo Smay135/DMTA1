@@ -9,6 +9,26 @@ Created on Wed Apr 17 15:57:04 2024
 import pandas as pd
 import numpy as np
 
+#for ranodm forest regression analysis 
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+
+#visualizing rando forest regression analysis
+from sklearn import tree
+import matplotlib.pyplot as plt
+
+
+#for random forest classification analysis 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+#for multiple linear regression 
+from sklearn import linear_model
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+
+
 
 
 df = pd.read_csv('/Users/esmeekool/Desktop/dataset_mood_smartphone.csv', delimiter=',')
@@ -29,7 +49,7 @@ df['rounded_time'] = df['time'].dt.to_period('D').dt.to_timestamp()
 
 figure_1= [] # empty dataframe to put each participant info into 
 
-prediction_length=6 # change depending on how many days you want variables to reflect 
+prediction_length=2 # change depending on how many days you want variables to reflect 
 for person in participants:
 
     #Ordering the day and removing time stamps that have no mood value
@@ -60,21 +80,22 @@ for person in participants:
     figure_1.append(subset_final)
     
 final_df = pd.concat(figure_1, ignore_index=True)
-final_df.fillna(0, inplace=True)  #0 in place of Nan values --> not the final tactic!!!
+variable_medians = final_df.median()
+final_df.fillna(variable_medians, inplace=True)  #0 in place of Nan values --> not the final tactic!!!
+final_df['mood']=np.round(final_df['mood'])
 
 
 
-
-# Random tree search 
+# 1
+#Random tree search 
 #preparing the data (predicitona dn outcome variables seperate) 
 mood = np.array(final_df['mood'])
 
-variables= final_df.drop('mood', axis = 1)
+variables= final_df.drop(['mood', 'mood_class'], axis = 1)
 variable_names = list(variables.columns) # variables names 
 variables = np.array(variables) # numpy array instead of dataframe 
 
 #training/test sets 
-from sklearn.model_selection import train_test_split
 '''
 OMG this is kinda a usefull function
 Just need to still decide if we simply wanta  crossover design or like if we can do k-fold
@@ -88,7 +109,6 @@ train_variables, test_variables, train_mood, test_mood = train_test_split(variab
 #print('Average baseline error: ', round(np.mean(baseline_errors), 2))
 
 #Training the model
-from sklearn.ensemble import RandomForestRegressor
 rf = RandomForestRegressor(n_estimators = 1000, random_state = 42) # Instantiate model with 1000 decision trees
 rf.fit(train_variables, train_mood); # training the model 
 
@@ -104,8 +124,6 @@ accuracy = 100 - np.mean(mape)
 print('Accuracy:', round(accuracy, 2), '%.')
 
 #visualizing
-from sklearn import tree
-import matplotlib.pyplot as plt
 
 # single decision tree from the forest
 plt.figure(figsize=(12, 8))
@@ -122,6 +140,71 @@ plt.xlabel('Actual Mood')
 plt.ylabel('Predicted Mood')
 plt.title('Actual vs Predicted Mood')
 plt.show()
+
+
+
+# 2
+#RANDOM FOREST CLASSIFIER APROACH --> is what i did before regression??
+# 0-3: Low Mood, 4-6: Medium Mood, 7-10: High Mood
+final_df['mood_class'] = pd.cut(final_df['mood'], bins=[-np.inf, 3, 6, np.inf], labels=['Low', 'Medium', 'High'])
+train_variables_class, test_variables_class, train_mood_class, test_mood_class = train_test_split(variables, final_df['mood_class'], test_size=0.25, random_state=42)
+
+rf_class = RandomForestClassifier(n_estimators=1000, random_state=42, max_features='sqrt') # train RandomForestClassifier
+rf_class.fit(train_variables_class, train_mood_class)
+
+predictions_class = rf_class.predict(test_variables_class) # predictions
+
+# Evaluatation 
+accuracy = accuracy_score(test_mood_class, predictions_class)
+report = classification_report(test_mood_class, predictions_class)
+
+print("Accuracy:", accuracy)
+print("Classification Report:")
+print(report)
+
+
+
+
+#adding more data:
+#final_df_1=final_df
+#final_df_2=final_df
+#final_df_3=final_df
+
+#final_df= pd.concat([final_df_1, final_df_2, final_df_3], axis=0)
+
+
+
+
+# 3
+#Multiple Linear regression
+
+# separate predictor and outcome
+mood = final_df['mood']
+variables = final_df.drop(['mood', 'mood_class'], axis=1)
+
+# training and testing sets
+train_variables_linear, test_variables_linear, train_mood_linear, test_mood_linear = train_test_split(variables, mood, test_size=0.25, random_state=42)
+
+# train model
+linear_reg = LinearRegression()
+linear_reg.fit(train_variables_linear, train_mood_linear)
+
+# predictions
+prediction_linear = linear_reg.predict(test_variables_linear)
+
+# evalutaion
+mae = mean_absolute_error(test_mood_linear, prediction_linear) # mean absolute error (mae)
+mse = mean_squared_error(test_mood_linear, prediction_linear) # mean absolute squared error (mse)
+rmse = np.sqrt(mse) # root mean squared error (rmse)
+
+r2 = r2_score(test_mood_linear, prediction_linear) # r^2 score
+
+print("Mean Absolute Error (MAE):", mae)
+print("Mean Squared Error (MSE):", mse)
+print("Root Mean Squared Error (RMSE):", rmse)
+print("R-squared (R2) Score:", r2)
+
+
 
 
     
